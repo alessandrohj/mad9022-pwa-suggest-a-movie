@@ -111,7 +111,7 @@ const APP = {
           let card = anchor.closest('.card');
           let title = card.querySelector('.card-title span').textContent;
           let mid = card.getAttribute('data-id');
-          let base = location.origin;
+          let base = location.href;
           let url = new URL('./suggest.html', base);
           url.search = `?movie_id=${mid}&ref=${encodeURIComponent(title)}`;
           location.href = url;
@@ -158,7 +158,7 @@ const APP = {
     //if no matches to a fetch call to TMDB API
     //or make the fetch call and intercept it in the SW
 
-    let url = `${APP.BASE_URL}movie/${mid}/similar?api_key=${APP.API_KEY}&ref=${ref}`;
+    let url = `${APP.BASE_URL}movie/${mid}/recommendations?api_key=${APP.API_KEY}&ref=${ref}`;
     //TODO: choose between /similar and /suggested endpoints from API
 
     APP.getData(url, (data) => {
@@ -249,10 +249,24 @@ const APP = {
     //success listener
     //save db reference as APP.db
     //error listener
-    // let req = indexedDB.open();
-    // req.onsuccess = (ev) =>{
-    //   APP.db = ev.target.result;
-    // }
+    let req = indexedDB.open('deje0014-PWA-suggest-a-movie', APP.dbVersion);
+    req.onupgradeneeded = (ev) => {
+      let db = ev.target.result;
+      if (!db.objectStoreNames.contains('movies')) {
+        db.createObjectStore('movies', {
+          keyPath: 'id',
+        });
+      }
+    };
+
+    req.onsuccess = (ev) =>{
+      console.log('DB opened and upgraded as needed.')
+      APP.db = ev.target.result;
+    }
+    req.onerror = (err) => {
+      console.warn(err);
+      APP.db = null;
+    };
   },
 };
 
