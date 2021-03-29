@@ -1,10 +1,9 @@
 //service worker for suggest-a-movie app
-
-let staticName = 'static-v1';
-let dynamicName = 'dynamic-v1';
-let dbVersion = 1;
+const version = 1;
+let staticName = `staticCache-${version}`;
+let dynamicName = `dynamicCache-${version}`;
 let cacheSize = 65;
-let staticList = [
+let assets = [
   '/',
   '/index.html',
   'https://fonts.googleapis.com/icon?family=Material+Icons',
@@ -14,6 +13,35 @@ let dynamicList = [];
 
 self.addEventListener('install', (ev) => {
   //install event - browser has installed this version
+  console.log('service worker has been installed ', version, ev);
+  // build cache
+  ev.waitUntil(
+      caches
+      .open(staticName)
+      .then((cache) => {
+          cache.addAll(assets).then(
+              ()=> {
+                     console.log(`${staticName} has been updated.`);
+              },
+              (err) => {
+                  console.warn(`failed to update ${staticName}.`);
+              }
+          )
+      })
+  //     .then(()=>{
+  //         caches.open(imageName)
+  //         .then((cache)=>{
+  //             cache.addAll(imageAssets)
+  //             .then(()=>{
+  //                 console.log(`${imageName} has been updated.`);
+  //             },
+  //             (err) => {
+  //                 console.warn(`failed to update ${staticName}.`);
+  //               }
+  //             );
+  //         });
+  //     })
+  )
 });
 
 self.addEventListener('activate', (ev) => {

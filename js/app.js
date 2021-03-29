@@ -6,7 +6,7 @@ const APP = {
   poster_sizes: ['w92', 'w154', 'w185', 'w342', 'w500', 'w780', 'original'],
   profile_sizes: ['w45', 'w185', 'h632', 'original'],
   still_sizes: ['w92', 'w185', 'w300', 'original'],
-  API_KEY: 'your-api-key-goes-here',
+  API_KEY: 'a1b2f514b71b98f4fdeabd6fae26bd24',
   isOnline: 'onLine' in navigator && navigator.onLine,
   isStandalone: false,
   sw: null, //your service worker
@@ -14,10 +14,8 @@ const APP = {
   dbVersion: 1,
   init() {
     //register service worker
-    if ('serviceWorker' in navigator) {
-      //listen for controllerchange events
-      //listen for message events
-    }
+  APP.worker();
+
     //open the database
     APP.openDB();
 
@@ -39,10 +37,22 @@ const APP = {
       APP.isStandalone = false;
     }
   },
+  worker: ()=>{
+    if('serviceWorker' in navigator){
+      window.addEventListener("load", function() {
+      navigator.serviceWorker
+      .register('./sw.js', {
+          scope: './',
+      })
+      .then( (reg)=> console.log('Service Worker registered.', reg))
+      .catch((err)=> console.log('Service Worker not registered.', err))
+  })
+}
+  },
   pageLoaded() {
     //page has just loaded and we need to check the queryString
     //based on the querystring value(s) run the page specific tasks
-    // console.log('page loaded and checking', location.search);
+    console.log('page loaded and checking', location.search);
     let params = new URL(document.location).searchParams;
     let keyword = params.get('keyword');
     if (keyword) {
@@ -80,7 +90,7 @@ const APP = {
         let searchInput = document.getElementById('search');
         let keyword = searchInput.value.trim();
         if (keyword) {
-          let base = location.origin;
+          let base = location.href;
           let url = new URL('./results.html', base);
           url.search = '?keyword=' + encodeURIComponent(keyword);
           location.href = url;
@@ -182,6 +192,7 @@ const APP = {
       .then((data) => {
         //callback
         cb(data);
+        console.log(data);
       })
       .catch((err) => {
         console.warn(err);
@@ -194,6 +205,8 @@ const APP = {
     let container = document.querySelector(`.movies`);
     //TODO: customize this HTML to make it your own
     if (container) {
+      let moviesPage = document.querySelector('#moviesPage');
+      moviesPage.classList.add('active');
       if (movies.length > 0) {
         container.innerHTML = movies
           .map((obj) => {
@@ -236,6 +249,10 @@ const APP = {
     //success listener
     //save db reference as APP.db
     //error listener
+    // let req = indexedDB.open();
+    // req.onsuccess = (ev) =>{
+    //   APP.db = ev.target.result;
+    // }
   },
 };
 

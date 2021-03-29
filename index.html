@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>App Title</title>
+    <title>PWA - Suggest A Movie</title>
     <!-- pwa manifest and android support meta and link tags-->
     <link rel="manifest" href="#" />
     <meta name="theme-color" content="#" />
@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-status-bar" content="#" />
 
     <!--Import Google Icon Font-->
-
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- styles materialize and main-->
     <link rel="stylesheet" href="./css/materialize.min.css" />
     <link rel="stylesheet" href="./css/main.css" />
@@ -33,13 +33,13 @@
     <!-- components over top -->
     <!-- nav bar -->
     <nav>
-      <div class="nav-wrapper">
-        <a href="index.html" class="brand-logo left">App Title</a>
+      <div class="nav-wrapper red darken-2">
+        <a href="index.html" class="brand-logo left">PWA - Suggest A Movie</a>
       </div>
     </nav>
 
     <!-- search bar -->
-    <div class="nav-wrapper z-depth-3 hide" id="searchBar">
+    <div class="nav-wrapper z-depth-3" id="searchBar">
       <form name="searchForm" id="searchForm">
         <div class="input-field">
           <input id="search" type="search" required />
@@ -50,5 +50,10 @@
         </div>
       </form>
     </div>
+    <div class="fixed-action-btn">
+      <a class="btn-floating btn-large red darken-4 z-depth-3 pulse">
+          <i class="large material-icons">search</i>
+      </a>
+  </div>
   </body>
 </html>
