@@ -73,25 +73,38 @@ self.addEventListener('activate', (ev) => {
 
 self.addEventListener('fetch', (ev) => {
   //fetch event - web page is asking for an asset
-  if (
-    ev.request.url.startsWith("https://image.tmdb.org/t/p/") || ev.request.url.startsWith("https://api.themoviedb.org/3/") && ev.request.method === "GET"
-  ) {
-    ev.respondWith(
-      (async () => {
-        const cache = await caches.open(dynamicName);
-        try { 
-          //Always try the network first
-          const networkResponse = fetch(ev.request);
-          cache.put(ev.request, (await networkResponse).clone());
-          return networkResponse;
-        } catch (err) {
-          //If there was a network error, check the cache
-          const cachedResult = await cache.match(ev.request);
-          return cachedResult;
-        }
-      })()
-    );
-}
+// check if resource exists in cache. If it exists, return it, if not fetch it from network
+  caches.match(ev.request).then((response)=>{
+    // checking if it exists and returning it
+    if (response) {
+
+      return response;
+    } 
+    // if it doesn't exist, fetch from network
+    return fetch(ev.request).then(function(response) {
+      // check if the fetch contains API resources (images and array) to add to Dynamic Cache
+      if (
+        ev.request.url.startsWith("https://image.tmdb.org/t/p/") || ev.request.url.startsWith("https://api.themoviedb.org/3/") && ev.request.method === "GET"
+      ) {
+        ev.respondWith(
+          (async () => {
+            const cache = await caches.open(dynamicName);
+            try { 
+              // checking network first before adding it to cache
+              const networkResponse = fetch(ev.request);
+              cache.put(ev.request, (await networkResponse).clone());
+              return networkResponse;
+            } catch (err) {
+              //If there was a network error, check the cache
+              const cachedResult = await cache.match(ev.request);
+              return cachedResult;
+            }
+          })()
+        );
+    }
+      
+    }
+  )})
 
 });
 
