@@ -149,7 +149,7 @@ const APP = {
     let movies = APP.results;
     let keywordSpan = document.querySelector('.ref-keyword');
     if (keyword && keywordSpan) {
-      keywordSpan.textContent = keyword;
+      keywordSpan.textContent = `Showing results for ${keyword}`;
     }
     APP.buildList(movies);
   },
@@ -212,7 +212,7 @@ const APP = {
           .map((obj) => {
             let img = './img/icon-512x512.png';
             if (obj.poster_path != null) {
-              img = APP.IMG_URL + 'w500/' + obj.poster_path;
+              img = APP.IMG_URL + 'w500' + obj.poster_path;
             }
             return `<div class="card hoverable large" data-id="${obj.id}">
           <div class="card-image">
@@ -251,14 +251,8 @@ const APP = {
     //error listener
     let req = indexedDB.open('deje0014-PWA-suggest-a-movie', APP.dbVersion);
     req.onupgradeneeded = (ev) => {
-      let db = ev.target.result;
-      if (!db.objectStoreNames.contains('movies')) {
-        db.createObjectStore('movies', {
-          keyPath: 'id',
-        });
+      APP.db = ev.target.result;
       }
-    };
-
     req.onsuccess = (ev) =>{
       console.log('DB opened and upgraded as needed.')
       APP.db = ev.target.result;
@@ -267,7 +261,7 @@ const APP = {
       console.warn(err);
       APP.db = null;
     };
-  },
-};
+}
+}
 
 document.addEventListener('DOMContentLoaded', APP.init);
