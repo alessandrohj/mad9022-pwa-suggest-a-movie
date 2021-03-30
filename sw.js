@@ -2,6 +2,10 @@
 const version = 1;
 let staticName = `staticCache-${version}`;
 let dynamicName = `dynamicCache-${version}`;
+let currentCaches = [
+    static = `staticCache-${version}`,
+    dynamic = `dynamicCache-${version}`
+];
 let cacheSize = 65;
 let DB = null;
 let assets = [
@@ -70,8 +74,7 @@ self.addEventListener('activate', (ev) => {
 self.addEventListener('fetch', (ev) => {
   //fetch event - web page is asking for an asset
   if (
-    ev.request.url.startsWith("https://api.themoviedb.org/3/") &&
-    ev.request.method === "GET"
+    ev.request.url.startsWith("https://image.tmdb.org/t/p/") || ev.request.url.startsWith("https://api.themoviedb.org/3/") && ev.request.method === "GET"
   ) {
     ev.respondWith(
       (async () => {
@@ -79,8 +82,6 @@ self.addEventListener('fetch', (ev) => {
         try { 
           //Always try the network first
           const networkResponse = fetch(ev.request);
-          dynamicList = networkResponse;
-          console.log(dynamicList);
           cache.put(ev.request, (await networkResponse).clone());
           return networkResponse;
         } catch (err) {
@@ -90,8 +91,8 @@ self.addEventListener('fetch', (ev) => {
         }
       })()
     );
-
 }
+
 });
 
 self.addEventListener('message', ({ data }) => {
