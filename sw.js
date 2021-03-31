@@ -65,7 +65,6 @@ self.addEventListener('activate', (ev) => {
         //empties is an Array of boolean values.
         //one for each cache deleted
         //TODO:
-        openDB();
       })
     })
   );
@@ -82,15 +81,14 @@ self.addEventListener('fetch', (ev) => {
     } 
     // if it doesn't exist, fetch from network
     return fetch(ev.request).then(function(response) {
-      // check if the fetch contains API resources (images and array) to add to Dynamic Cache
+      // check if the fetch contains API resources (images and array) to add to Dynamic cache
       if (
         ev.request.url.startsWith("https://image.tmdb.org/t/p/") || ev.request.url.startsWith("https://api.themoviedb.org/3/") && ev.request.method === "GET"
       ) {
-        ev.respondWith(
           (async () => {
             const cache = await caches.open(dynamicName);
             try { 
-              // checking network first before adding it to cache
+              //Always try the network first
               const networkResponse = fetch(ev.request);
               cache.put(ev.request, (await networkResponse).clone());
               return networkResponse;
@@ -100,7 +98,6 @@ self.addEventListener('fetch', (ev) => {
               return cachedResult;
             }
           })()
-        );
     }
       
     }
@@ -110,7 +107,9 @@ self.addEventListener('fetch', (ev) => {
 
 self.addEventListener('message', ({ data }) => {
   //message received from a web page that uses this sw
+  console.log('Message received from page', data);
 });
+
 
 const sendMessage = async (msg) => {
   //send a message from the service worker to the webpage(s)
@@ -124,28 +123,4 @@ const sendMessage = async (msg) => {
     })
   );
   
-};
-
-const openDB = (callback) => {
-  let req = indexedDB.open('deje0014-PWA-suggest-a-movie', version);
-  req.onerror = (err) => {
-    //could not open db
-    console.warn(err);
-    DB = null;
-  };
-  req.onupgradeneeded = (ev) => {
-    let db = ev.target.result;
-    if (!db.objectStoreNames.contains('movies')) {
-      db.createObjectStore('movies', {
-        keyPath: 'id',
-      });
-    }
-  };
-  req.onsuccess = (ev) => {
-    DB = ev.target.result;
-    console.log('DB opened and upgraded as needed.');
-    if (callback) {
-      callback();
-    }
-  }
 };

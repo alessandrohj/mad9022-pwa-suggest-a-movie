@@ -12,6 +12,10 @@ const APP = {
   sw: null, //your service worker
   db: null, //your database
   dbVersion: 1,
+  dbStoreResults: 'movieStore',
+  dbStoreSimilar: null,
+  results: [],
+  suggestedResults: [],
   init() {
     //register service worker
   APP.worker();
@@ -46,6 +50,13 @@ const APP = {
       })
       .then( (reg)=> console.log('Service Worker registered.', reg))
       .catch((err)=> console.log('Service Worker not registered.', err))
+
+      //listen for the latest sw
+      navigator.serviceWorker.addEventListener('controllerchange', async ()=>{
+        APP.sw = navigator.serviceWorker.controller;
+      })
+      // listen for messages from Service Worker
+      navigator.serviceWorker.addEventListener('message', APP.onMessage)
   })
 }
   },
@@ -122,10 +133,14 @@ const APP = {
   sendMessage(msg, target) {
     //TODO:
     //send a message to the service worker
+    if(navigator.serviceWorker.controller){
+      navigator.serviceWorker.controller.postMessage(msg);
+    }
   },
   onMessage({ data }) {
     //TODO:
     //message received from service worker
+    console.log('Web page receiving: ', data);
   },
   startSearch(keyword) {
     //TODO: check in IDB for movie results
@@ -139,6 +154,7 @@ const APP = {
         //this is the CALLBACK to run after the fetch
         APP.results = data.results;
         APP.useSearchResults(keyword);
+        APP.addDataToIDB(APP.results, keyword, APP.dbStoreResults);
       });
     }
   },
@@ -250,18 +266,54 @@ const APP = {
     //save db reference as APP.db
     //error listener
     let req = indexedDB.open('deje0014-PWA-suggest-a-movie', APP.dbVersion);
-    req.onupgradeneeded = (ev) => {
-      APP.db = ev.target.result;
-      }
-    req.onsuccess = (ev) =>{
-      console.log('DB opened and upgraded as needed.')
-      APP.db = ev.target.result;
-    }
-    req.onerror = (err) => {
-      console.warn(err);
-      APP.db = null;
-    };
+    let objectStore = null;
+
+req.addEventListener('upgradeneeded', (ev) => {
+APP.db = ev.target.result;
+let oldVersion = ev.oldVersion;
+let newVersion = ev.newVersion || APP.db.version;
+console.log(`Upgrading DB from version ${oldVersion} to version ${newVersion}`);
+if (! APP.db.objectStoreNames.contains(APP.dbStoreResults)){
+objectStore = APP.db.createObjectStore(APP.dbStoreResults)
 }
+})
+
+req.addEventListener('success', (ev) => {
+console.log('DB opened and upgraded as needed.', APP.db)
+APP.db = ev.target.result;
+})
+
+req.addEventListener('error', (err) => {
+console.warn(err);
+ })
+
+},
+addDataToIDB: (payload, key, DBStore) =>{
+  let tx = APP.db.transaction(DBStore, 'readwrite');
+
+  // let obj = {
+  //   keyword: key,
+  //   results: payload,
+  // }
+
+  tx.oncomplete = (ev) =>{
+    console.log(ev)
+  }
+  tx.onerror = (err) =>{
+    console.warn(err)
+  }
+  let store = tx.objectStore(DBStore);
+  let req = store.put({results: payload, keyword: key}, key);
+
+  req.onsuccess = (ev) =>{
+    console.log('Object added to store')
+  }
+
+  req.onerror = (err) =>{
+    console.warn(err);
+  }
+},
+
 }
 
 document.addEventListener('DOMContentLoaded', APP.init);
