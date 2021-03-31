@@ -13,7 +13,7 @@ const APP = {
   db: null, //your database
   dbVersion: 1,
   dbStoreResults: 'movieStore',
-  dbStoreSimilar: null,
+  dbStoreSimilar: 'suggestedStore',
   results: [],
   suggestedResults: [],
   init() {
@@ -176,11 +176,11 @@ const APP = {
 
     let url = `${APP.BASE_URL}movie/${mid}/recommendations?api_key=${APP.API_KEY}&ref=${ref}`;
     //TODO: choose between /similar and /suggested endpoints from API
-
     APP.getData(url, (data) => {
       //this is the callback that will be used after fetch
       APP.suggestedResults = data.results;
       APP.useSuggestedResults(ref);
+      APP.addDataToIDB(APP.suggestedResults, mid, APP.dbStoreSimilar);
     });
   },
   useSuggestedResults(ref) {
@@ -273,8 +273,9 @@ APP.db = ev.target.result;
 let oldVersion = ev.oldVersion;
 let newVersion = ev.newVersion || APP.db.version;
 console.log(`Upgrading DB from version ${oldVersion} to version ${newVersion}`);
-if (! APP.db.objectStoreNames.contains(APP.dbStoreResults)){
+if (! APP.db.objectStoreNames.contains(APP.dbStoreResults) || ! APP.db.objectStoreNames.contains(APP.dbStoreSimilar)){
 objectStore = APP.db.createObjectStore(APP.dbStoreResults)
+objectStore = APP.db.createObjectStore(APP.dbStoreSimilar)
 }
 })
 
@@ -290,11 +291,6 @@ console.warn(err);
 },
 addDataToIDB: (payload, key, DBStore) =>{
   let tx = APP.db.transaction(DBStore, 'readwrite');
-
-  // let obj = {
-  //   keyword: key,
-  //   results: payload,
-  // }
 
   tx.oncomplete = (ev) =>{
     console.log(ev)
