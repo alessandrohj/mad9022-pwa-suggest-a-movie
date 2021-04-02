@@ -180,6 +180,14 @@ const APP = {
     //TODO: Do the search of IndexedDB for matches
     //if no matches to a fetch call to TMDB API
     //or make the fetch call and intercept it in the SW
+
+      //check IndexedDB and build a list of movies if there's a result from it
+      APP.getDataFromIDB(APP.dbStoreSimilar, mid, (data) =>{
+        APP.buildList(data);
+        console.log('this is data', data);
+      });
+     
+      //if no result from it, fetch the API
    
     let url = `${APP.BASE_URL}movie/${mid}/recommendations?api_key=${APP.API_KEY}&ref=${ref}`;
     //TODO: choose between /similar and /suggested endpoints from API
