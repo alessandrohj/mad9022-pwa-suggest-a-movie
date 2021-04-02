@@ -11,23 +11,22 @@ const APP = {
   isStandalone: false,
   sw: null, //your service worker
   db: null, //your database
+  getDB: null,
   dbVersion: 1,
   dbStoreResults: 'movieStore',
   dbStoreSimilar: 'suggestedStore',
-  results: [],
+  results: null,
   suggestedResults: [],
   init() {
+    //open the database and run the pageLoaded function as a callback
+    APP.openDB(APP.pageLoaded);
     //register service worker
-  APP.worker();
-
-    //open the database
-    APP.openDB();
-
-    //run the pageLoaded function
-    APP.pageLoaded();
-
+    APP.worker();
     //add UI listeners
     APP.addListeners();
+    //run the pageLoaded function
+    // APP.pageLoaded();
+
 
     //check if the app was launched from installed version
     if (navigator.standalone) {
@@ -148,15 +147,23 @@ const APP = {
       //check the db
       //if no matches make a fetch call to TMDB API
       //or make the fetch call and intercept it in the SW
-      let url = `${APP.BASE_URL}search/movie?api_key=${APP.API_KEY}&query=${keyword}`;
 
+      //check IndexedDB and build a list of movies if there's a result from it
+      APP.getDataFromIDB(APP.dbStoreResults, keyword, (data) =>{
+        APP.buildList(data);
+        console.log('this is data', data);
+      });
+     
+      //if no result from it, fetch the API
+      let url = `${APP.BASE_URL}search/movie?api_key=${APP.API_KEY}&query=${keyword}`;
       APP.getData(url, (data) => {
         //this is the CALLBACK to run after the fetch
         APP.results = data.results;
         APP.useSearchResults(keyword);
         APP.addDataToIDB(APP.results, keyword, APP.dbStoreResults);
       });
-    }
+
+  }
   },
   useSearchResults(keyword) {
     //after getting fetch or db results
@@ -173,7 +180,7 @@ const APP = {
     //TODO: Do the search of IndexedDB for matches
     //if no matches to a fetch call to TMDB API
     //or make the fetch call and intercept it in the SW
-
+   
     let url = `${APP.BASE_URL}movie/${mid}/recommendations?api_key=${APP.API_KEY}&ref=${ref}`;
     //TODO: choose between /similar and /suggested endpoints from API
     APP.getData(url, (data) => {
@@ -258,31 +265,32 @@ const APP = {
       }
     }
   },
-  openDB() {
+  openDB: (cb) => {
     //TODO:
     //open the indexedDB
     //upgradeneeded listener
     //success listener
     //save db reference as APP.db
     //error listener
-    let req = indexedDB.open('deje0014-PWA-suggest-a-movie', APP.dbVersion);
-    let objectStore = null;
-
-req.addEventListener('upgradeneeded', (ev) => {
-APP.db = ev.target.result;
-let oldVersion = ev.oldVersion;
-let newVersion = ev.newVersion || APP.db.version;
-console.log(`Upgrading DB from version ${oldVersion} to version ${newVersion}`);
-if (! APP.db.objectStoreNames.contains(APP.dbStoreResults) || ! APP.db.objectStoreNames.contains(APP.dbStoreSimilar)){
-objectStore = APP.db.createObjectStore(APP.dbStoreResults)
-objectStore = APP.db.createObjectStore(APP.dbStoreSimilar)
-}
-})
+let req = indexedDB.open('deje0014-PWA-suggest-a-movie', APP.dbVersion);
 
 req.addEventListener('success', (ev) => {
-console.log('DB opened and upgraded as needed.', APP.db)
-APP.db = ev.target.result;
+  APP.db = ev.target.result;
+console.log('DB opened and upgraded as needed.', APP.db);
+cb();
+
 })
+
+req.addEventListener('upgradeneeded', (ev) => {
+  APP.db = ev.target.result;
+  let oldVersion = ev.oldVersion;
+  let newVersion = ev.newVersion || APP.db.version;
+  console.log(`Upgrading DB from version ${oldVersion} to version ${newVersion}`);
+  if (!APP.db.objectStoreNames.contains(APP.dbStoreResults) || ! APP.db.objectStoreNames.contains(APP.dbStoreSimilar)){
+     APP.db.createObjectStore(APP.dbStoreResults);
+     APP.db.createObjectStore(APP.dbStoreSimilar);
+  }
+  })
 
 req.addEventListener('error', (err) => {
 console.warn(err);
@@ -290,16 +298,10 @@ console.warn(err);
 
 },
 addDataToIDB: (payload, key, DBStore) =>{
-  let tx = APP.db.transaction(DBStore, 'readwrite');
 
-  tx.oncomplete = (ev) =>{
-    console.log(ev)
-  }
-  tx.onerror = (err) =>{
-    console.warn(err)
-  }
-  let store = tx.objectStore(DBStore);
-  let req = store.put({results: payload, keyword: key}, key);
+let req = APP.db.transaction(DBStore, 'readwrite')
+ .objectStore(DBStore)
+ .put({results: payload, keyword: key}, key);
 
   req.onsuccess = (ev) =>{
     console.log('Object added to store')
@@ -307,9 +309,25 @@ addDataToIDB: (payload, key, DBStore) =>{
 
   req.onerror = (err) =>{
     console.warn(err);
+    console.log('Object already exists')
   }
 },
+getDataFromIDB: (DBStore, key, cb) => {
+   let req = APP.db.transaction(DBStore, 'readonly')
+    .objectStore(DBStore)
+    .get(key);
 
+  req.onsuccess = (ev) =>{
+    if(req.result) {
+      APP.results = req.result['results'];
+      cb(APP.results);
+  }
+  
+  req.onerror = (err) =>{
+    console.warn(err);
+  }
+  
 }
-
+},
+};
 document.addEventListener('DOMContentLoaded', APP.init);

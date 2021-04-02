@@ -76,7 +76,6 @@ self.addEventListener('fetch', (ev) => {
   caches.match(ev.request).then((response)=>{
     // checking if it exists and returning it
     if (response) {
-
       return response;
     } 
     // if it doesn't exist, fetch from network
