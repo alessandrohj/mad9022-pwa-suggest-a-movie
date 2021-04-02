@@ -1,7 +1,7 @@
 //service worker for suggest-a-movie app
 const version = 1;
-let staticName = `staticCache-${version}`;
-let dynamicName = `dynamicCache-${version}`;
+let staticCache = `staticCache-${version}`;
+let dynamicCache = `dynamicCache-${version}`;
 let currentCaches = [
     static = `staticCache-${version}`,
     dynamic = `dynamicCache-${version}`
@@ -10,6 +10,7 @@ let cacheSize = 65;
 let DB = null;
 let assets = [
   '/',
+  './img/',
   './index.html',
   './css/main.css',
   './css/materialize.min.css',
@@ -19,6 +20,7 @@ let assets = [
   'https://fonts.googleapis.com/icon?family=Material+Icons',
   'https://fonts.gstatic.com/s/materialicons/v78/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2',
 ];
+const offlinePage =   './404.html';
 let dynamicList = [];
 
 self.addEventListener('install', (ev) => {
@@ -26,26 +28,18 @@ self.addEventListener('install', (ev) => {
   console.log('service worker has been installed ', version, ev);
   // build cache
   ev.waitUntil(
-      caches
-      .open(staticName)
+      caches.open(staticCache)
       .then((cache) => {
-        return Promise.all(
-          assets.map((item)=>{
-            return cache.add(item).catch((reason)=> {
-              console.log(reason);
-            })
-          })
-        )
-          .then(
-              ()=> {
-                     console.log(`${staticName} has been updated.`);
-              },
-              (err) => {
-                  console.warn(`${err} - failed to update ${staticName}.`);
-              }
-          )
+        return cache.addAll(assets);
       })
-  )
+      .then(()=> {
+        return self.skipWaiting();
+      },
+      (err) => {
+        console.warn(`${err} - failed to update ${staticCache}.`);
+    }
+    )
+      )
 });
 
 self.addEventListener('activate', (ev) => {
@@ -53,56 +47,61 @@ self.addEventListener('activate', (ev) => {
   console.log('activated');
   // delete old versions of caches.
   ev.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys .filter((key) => {
-          if (key != staticName) {
-            return true;
-          }
-        })
-        .map((key) => caches.delete(key))
-      ).then((empties) => {
+      caches.keys()
+      .then(cacheNames => {
+        return Promise.all(
+          cacheNames.filter(cacheName => {
+            if (cacheName != staticCache && cacheName != dynamicCache) {
+              return true;
+          }}).map(cacheName =>{
+            return caches.delete(cacheName);
+          })
+        )
+      })
+    )
+      .then((empties) => {
         //empties is an Array of boolean values.
         //one for each cache deleted
         //TODO:
+        console.log('Deleted successfully:', empties);
+        return self.clients.claim();
       })
-    })
-  );
-});
+    });
 
 self.addEventListener('fetch', (ev) => {
   //fetch event - web page is asking for an asset
 // check if resource exists in cache. If it exists, return it, if not fetch it from network
-  caches.match(ev.request).then((response)=>{
-    // checking if it exists and returning it
-    if (response) {
-      return response;
-    } 
-    // if it doesn't exist, fetch from network
-    return fetch(ev.request).then(function(response) {
-      // check if the fetch contains API resources (images and array) to add to Dynamic cache
-      if (
-        ev.request.url.startsWith("https://image.tmdb.org/t/p/") || ev.request.url.startsWith("https://api.themoviedb.org/3/") && ev.request.method === "GET"
-      ) {
-          (async () => {
-            const cache = await caches.open(dynamicName);
-            try { 
-              //Always try the network first
-              const networkResponse = fetch(ev.request);
-              cache.put(ev.request, (await networkResponse).clone());
-              return networkResponse;
-            } catch (err) {
-              //If there was a network error, check the cache
-              const cachedResult = await cache.match(ev.request);
-              return cachedResult;
-            }
-          })()
+caches.match(ev.request)
+.then((response)=>{
+  // checking if it exists and returning it
+  return response || fetch(ev.request)
+  .then((response) =>{
+    if(!response){
+      const cachedOfflinePage = caches.match(offlinePage);
+      return cachedOfflinePage;
     }
-      
-    }
-  )})
+    // check if the fetch contains API resources (images and array) to add to Dynamic cache
+    if (
+      ev.request.url.startsWith("https://image.tmdb.org/t/p/") || ev.request.url.startsWith("https://api.themoviedb.org/3/") && ev.request.method === "GET"
+    ) {
+        (async () => {
+          const cache = await caches.open(dynamicCache);
+            //Always try the network first
+            const networkResponse = response.clone();
+            cache.put(ev.request, networkResponse);
+            return response;
+        })()
+  }
+    
+}
+).catch(err=>{
+  const cachedOfflinePage = caches.match(offlinePage);
+  return cachedOfflinePage;
+})
+})
 
 });
+
 
 self.addEventListener('message', ({ data }) => {
   //message received from a web page that uses this sw
@@ -117,9 +116,31 @@ const sendMessage = async (msg) => {
     allClients.map((client) => {
       let channel = new MessageChannel();
       channel.port1.onmessage = onMessage;
+      if ('isOnline' in msg) {
+        console.log('tell the browser if online');
+      }
       //port1 for send port2 for receive
       return client.postMessage(msg, [channel.port2]);
     })
   );
   
 };
+
+// function fetchAndCache(url) {
+//   return fetch(url)
+//   .then((response) => {
+//     // Check if we received a valid response
+//     if (!response.ok) {
+//       throw Error(response.statusText);
+//     }
+//     return caches.open(dynamicCache)
+//     .then((cache) => {
+//       cache.put(url, response.clone());
+//       return response;
+//     });
+//   })
+//   .catch((err) => {
+//     console.log('Request failed:', err);
+//     // You could return a custom offline 404 page here
+//   });
+// }

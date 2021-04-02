@@ -81,7 +81,20 @@ const APP = {
   addListeners() {
     //TODO:
     //listen for on and off line events
-
+    window.addEventListener('online', (ev) => {
+      navigator.serviceWorker.controller.postMessage({
+        checkOnline: APP.isOnline,
+      })
+      APP.goneOnline();
+    });
+      //tell the service worker about the change to online
+    window.addEventListener('offline', (ev) => {
+      APP.goneOffline();
+      //tell the service worker about the change to offline
+      navigator.serviceWorker.controller.postMessage({
+        checkOnline: APP.isOnline,
+      })
+    });
     //TODO:
     //listen for Chrome install prompt
     //handle the deferredPrompt
@@ -146,25 +159,29 @@ const APP = {
     if (keyword) {
       //check the db
       //if no matches make a fetch call to TMDB API
-      //or make the fetch call and intercept it in the SW
-
+      //or make the fetch call and intercept it in the SW  
       //check IndexedDB and build a list of movies if there's a result from it
-      APP.getDataFromIDB(APP.dbStoreResults, keyword, (data) =>{
-        APP.buildList(data);
-        console.log('this is data', data);
-      });
-     
-      //if no result from it, fetch the API
-      let url = `${APP.BASE_URL}search/movie?api_key=${APP.API_KEY}&query=${keyword}`;
-      APP.getData(url, (data) => {
-        //this is the CALLBACK to run after the fetch
-        APP.results = data.results;
+      APP.getDataFromIDB(APP.dbStoreResults, keyword, ()=>{
+        // APP.buildList(dataDB);
         APP.useSearchResults(keyword);
-        APP.addDataToIDB(APP.results, keyword, APP.dbStoreResults);
-      });
-
-  }
+      },
+      APP.doSearch)
+      }
+    
   },
+  doSearch: (keyword)=>{
+    let url = `${APP.BASE_URL}search/movie?api_key=${APP.API_KEY}&query=${keyword}`;
+    //if no result from it, fetch the API
+    //This function is called after the DB is checked
+    APP.getData(url, (data) => {
+      //this is the CALLBACK to run after the fetch
+      console.log('data fetched');
+      APP.results = data.results;
+      APP.useSearchResults(keyword);
+      APP.addDataToIDB(APP.results, keyword, APP.dbStoreResults); //add fetched data do DB
+    });
+  },
+  
   useSearchResults(keyword) {
     //after getting fetch or db results
     //display search keyword in title
@@ -182,13 +199,19 @@ const APP = {
     //or make the fetch call and intercept it in the SW
 
       //check IndexedDB and build a list of movies if there's a result from it
-      APP.getDataFromIDB(APP.dbStoreSimilar, mid, (data) =>{
-        APP.buildList(data);
-        console.log('this is data', data);
-      });
+      APP.getDataFromIDB(APP.dbStoreSimilar, mid, (dataDB)=>{
+        // APP.buildList(dataDB);
+        APP.suggestedResults = dataDB;
+        APP.useSuggestedResults(ref);
+      }, APP.doSuggest)
      
       //if no result from it, fetch the API
-   
+  },
+  doSuggest: ()=>{
+    let params = new URL(document.location).searchParams;
+    let mid = parseInt(params.get('movie_id'));
+    let ref = params.get('ref');
+
     let url = `${APP.BASE_URL}movie/${mid}/recommendations?api_key=${APP.API_KEY}&ref=${ref}`;
     //TODO: choose between /similar and /suggested endpoints from API
     APP.getData(url, (data) => {
@@ -320,22 +343,32 @@ let req = APP.db.transaction(DBStore, 'readwrite')
     console.log('Object already exists')
   }
 },
-getDataFromIDB: (DBStore, key, cb) => {
+getDataFromIDB: (DBStore, key, cb, fetchData) => {
    let req = APP.db.transaction(DBStore, 'readonly')
     .objectStore(DBStore)
     .get(key);
 
   req.onsuccess = (ev) =>{
+    // console.log(req.result);
     if(req.result) {
-      APP.results = req.result['results'];
+     APP.results = req.result['results'];
       cb(APP.results);
+  } else {
+    fetchData(key);
   }
   
   req.onerror = (err) =>{
+    console.log('not found');
     console.warn(err);
   }
   
 }
 },
+goneOnline: () => {
+  APP.isOnline = true;
+},
+goneOffline: ()=>{
+  APP.isOnline = false;
+}
 };
 document.addEventListener('DOMContentLoaded', APP.init);
