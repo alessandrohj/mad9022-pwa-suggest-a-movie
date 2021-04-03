@@ -17,7 +17,7 @@ const APP = {
   dbStoreSimilar: 'suggestedStore',
   results: null,
   suggestedResults: [],
-  deferredPrompt: null,
+  deferredInstall: null,
   init() {
     //open the database and run the pageLoaded function as a callback, after DB has launched
     APP.openDB(APP.pageLoaded);
@@ -100,11 +100,16 @@ const APP = {
       ev.preventDefault();
       // Save the event in a global property
       // so that it can be triggered later.
-      APP.deferredPrompt = ev;
+      APP.deferredInstall = ev;
       console.log('deferredPrompt saved');
       // Build your own enhanced install experience
       // use the APP.deferredPrompt saved event
     });
+    //listen to install button/click
+    if(document.querySelector('#installButton')){
+    let button = document.querySelector('#installButton');
+    button.addEventListener('click', APP.installApp);
+  }
     //listen
     //listen for sign that app was installed
     window.addEventListener('appinstalled', (evt) => {
@@ -147,6 +152,18 @@ const APP = {
           location.href = url;
         }
       });
+    }
+  },
+  installApp: ()=>{
+    if(APP.deferredInstall){
+      APP.deferredInstall.prompt();
+      APP.deferredInstall.userChoice.then((choice)=>{
+        if(choice.outcome == 'accepted') {
+          console.log('App installed');
+        } else {
+          console.log('User cancelled installation');
+        }
+      })
     }
   },
   sendMessage(msg, target) {
