@@ -17,17 +17,14 @@ const APP = {
   dbStoreSimilar: 'suggestedStore',
   results: null,
   suggestedResults: [],
+  deferredPrompt: null,
   init() {
-    //open the database and run the pageLoaded function as a callback
+    //open the database and run the pageLoaded function as a callback, after DB has launched
     APP.openDB(APP.pageLoaded);
     //register service worker
     APP.worker();
     //add UI listeners
     APP.addListeners();
-    //run the pageLoaded function
-    // APP.pageLoaded();
-
-
     //check if the app was launched from installed version
     if (navigator.standalone) {
       // console.log('Launched: Installed (iOS)');
@@ -98,7 +95,17 @@ const APP = {
     //TODO:
     //listen for Chrome install prompt
     //handle the deferredPrompt
-
+    window.addEventListener('beforeinstallprompt', (ev) => {
+      // Prevent the mini-infobar from appearing on mobile
+      ev.preventDefault();
+      // Save the event in a global property
+      // so that it can be triggered later.
+      APP.deferredPrompt = ev;
+      console.log('deferredPrompt saved');
+      // Build your own enhanced install experience
+      // use the APP.deferredPrompt saved event
+    });
+    //listen
     //listen for sign that app was installed
     window.addEventListener('appinstalled', (evt) => {
       console.log('app was installed');
@@ -203,9 +210,7 @@ const APP = {
         // APP.buildList(dataDB);
         APP.suggestedResults = dataDB;
         APP.useSuggestedResults(ref);
-      }, APP.doSuggest)
-     
-      //if no result from it, fetch the API
+      }, APP.doSuggest) //callback function in case object doesn't exist in DB
   },
   doSuggest: ()=>{
     let params = new URL(document.location).searchParams;

@@ -2,25 +2,42 @@
 const version = 1;
 let staticCache = `staticCache-${version}`;
 let dynamicCache = `dynamicCache-${version}`;
-let currentCaches = [
-    static = `staticCache-${version}`,
-    dynamic = `dynamicCache-${version}`
-];
 let cacheSize = 65;
 let DB = null;
-let assets = [
-  '/',
+let pageAssets = [
+  './',
   './img/',
   './index.html',
   './css/main.css',
   './css/materialize.min.css',
   './js/app.js',
   './js/materialize.min.js',
+  './manifest.json',
   './404.html',
+  //   './img/icon-72x72.png',
+  // './img/icon-96x96.png',
+  // './img/icon-128x128.png',
+  // './img/icon-144x144.png',
+  // './img/icon-152x152.png',
+  // './img/icon-192x192.png',
+  // './img/icon-384x384.png',
+  // './img/icon-512x512.png', 
+  // './img/offline.png',
   'https://fonts.googleapis.com/icon?family=Material+Icons',
-  'https://fonts.gstatic.com/s/materialicons/v78/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2',
+  'https://fonts.gstatic.com/s/materialicons/v78/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2'
 ];
-const offlinePage =   './404.html';
+let imageAssets = [
+  './img/icon-72x72.png',
+  './img/icon-96x96.png',
+  './img/icon-128x128.png',
+  './img/icon-144x144.png',
+  './img/icon-152x152.png',
+  './img/icon-192x192.png',
+  './img/icon-384x384.png',
+  './img/icon-512x512.png', 
+  './img/offline.png'
+];
+const offlinePage =   '404.html';
 let dynamicList = [];
 
 self.addEventListener('install', (ev) => {
@@ -30,7 +47,7 @@ self.addEventListener('install', (ev) => {
   ev.waitUntil(
       caches.open(staticCache)
       .then((cache) => {
-        return cache.addAll(assets);
+        return cache.addAll(imageAssets) && cache.addAll(pageAssets);
       })
       .then(()=> {
         return self.skipWaiting();
@@ -58,48 +75,37 @@ self.addEventListener('activate', (ev) => {
           })
         )
       })
-    )
       .then((empties) => {
         //empties is an Array of boolean values.
         //one for each cache deleted
         //TODO:
         console.log('Deleted successfully:', empties);
-        return self.clients.claim();
+        // return self.clients.claim();
       })
+  )
     });
 
 self.addEventListener('fetch', (ev) => {
   //fetch event - web page is asking for an asset
 // check if resource exists in cache. If it exists, return it, if not fetch it from network
-caches.match(ev.request)
-.then((response)=>{
-  // checking if it exists and returning it
-  return response || fetch(ev.request)
-  .then((response) =>{
-    if(!response){
+    const requestURL = new URL(ev.request.url);
+  ev.respondWith(
+    caches.match(ev.request)
+    .then(response=>{
+      // const cachedOfflinePage = caches.match(offlinePage);
+      return response || fetch(ev.request).then(fetchResponse =>{
+        return caches.open(dynamicCache)
+        .then(cache=>{
+          cache.put(ev.request.url, fetchResponse.clone())
+          return fetchResponse;
+        })
+      })
+    })
+    .catch(err =>{
       const cachedOfflinePage = caches.match(offlinePage);
       return cachedOfflinePage;
-    }
-    // check if the fetch contains API resources (images and array) to add to Dynamic cache
-    if (
-      ev.request.url.startsWith("https://image.tmdb.org/t/p/") || ev.request.url.startsWith("https://api.themoviedb.org/3/") && ev.request.method === "GET"
-    ) {
-        (async () => {
-          const cache = await caches.open(dynamicCache);
-            //Always try the network first
-            const networkResponse = response.clone();
-            cache.put(ev.request, networkResponse);
-            return response;
-        })()
-  }
-    
-}
-).catch(err=>{
-  const cachedOfflinePage = caches.match(offlinePage);
-  return cachedOfflinePage;
-})
-})
-
+    })
+  )
 });
 
 
@@ -126,21 +132,3 @@ const sendMessage = async (msg) => {
   
 };
 
-// function fetchAndCache(url) {
-//   return fetch(url)
-//   .then((response) => {
-//     // Check if we received a valid response
-//     if (!response.ok) {
-//       throw Error(response.statusText);
-//     }
-//     return caches.open(dynamicCache)
-//     .then((cache) => {
-//       cache.put(url, response.clone());
-//       return response;
-//     });
-//   })
-//   .catch((err) => {
-//     console.log('Request failed:', err);
-//     // You could return a custom offline 404 page here
-//   });
-// }
