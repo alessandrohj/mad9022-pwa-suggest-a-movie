@@ -14,15 +14,6 @@ let pageAssets = [
   './js/materialize.min.js',
   './manifest.json',
   './404.html',
-  //   './img/icon-72x72.png',
-  // './img/icon-96x96.png',
-  // './img/icon-128x128.png',
-  // './img/icon-144x144.png',
-  // './img/icon-152x152.png',
-  // './img/icon-192x192.png',
-  // './img/icon-384x384.png',
-  // './img/icon-512x512.png', 
-  // './img/offline.png',
   'https://fonts.googleapis.com/icon?family=Material+Icons',
   'https://fonts.gstatic.com/s/materialicons/v78/flUhRq6tzZclQEJ-Vdg-IuiaDsNcIhQ8tQ.woff2'
 ];
@@ -39,6 +30,20 @@ let imageAssets = [
 ];
 const offlinePage =   '404.html';
 let dynamicList = [];
+
+//cache limit function
+const limitCacheSize = (cacheName, size) =>{
+  caches.open(cacheName)
+  .then(cache=>{
+    cache.keys()
+    .then(keys=>{
+      if(keys.length > size){
+        cache.delete(keys[0])
+        .then(limitCacheSize(cacheName, size))
+      }
+    })
+  })
+}
 
 self.addEventListener('install', (ev) => {
   //install event - browser has installed this version
@@ -96,16 +101,18 @@ self.addEventListener('fetch', (ev) => {
       return response || fetch(ev.request).then(fetchResponse =>{
         return caches.open(dynamicCache)
         .then(cache=>{
-          cache.put(ev.request.url, fetchResponse.clone())
+          cache.put(ev.request.url, fetchResponse.clone());
+          limitCacheSize(dynamicCache, cacheSize);
           return fetchResponse;
         })
       })
     })
-    .catch(err =>{
-      const cachedOfflinePage = caches.match(offlinePage);
-      return cachedOfflinePage;
+    .catch(() =>{
+      if(ev.request.url.indexOf('.html') > -1){
+        return caches.match(offlinePage);
+      }
     })
-  )
+  );
 });
 
 

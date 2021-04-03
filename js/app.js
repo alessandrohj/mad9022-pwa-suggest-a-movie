@@ -212,9 +212,8 @@ const APP = {
         APP.useSuggestedResults(ref);
       }, APP.doSuggest) //callback function in case object doesn't exist in DB
   },
-  doSuggest: ()=>{
+  doSuggest: (mid)=>{
     let params = new URL(document.location).searchParams;
-    let mid = parseInt(params.get('movie_id'));
     let ref = params.get('ref');
 
     let url = `${APP.BASE_URL}movie/${mid}/recommendations?api_key=${APP.API_KEY}&ref=${ref}`;
