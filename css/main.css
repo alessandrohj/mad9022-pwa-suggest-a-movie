@@ -49,3 +49,10 @@ body{
 h5 {
   font-weight: bold;
 }
+
+#offline {
+  padding-top: 3rem;
+}
+#offlineImage{
+  max-width: 30rem;
+}
