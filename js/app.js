@@ -106,6 +106,7 @@ const APP = {
       // use the APP.deferredPrompt saved event
     });
     //listen to install button/click
+    // Offer to install PWA/APP  after 5 seconds on site.
     if(document.querySelector('#installButton')){
     let button = document.querySelector('#installButton');
     button.addEventListener('click', APP.installApp);
@@ -126,6 +127,8 @@ const APP = {
     //listen for sign that app was installed
     window.addEventListener('appinstalled', (evt) => {
       console.log('app was installed');
+      let installButton = document.querySelector('#installation');
+      installButton.classList.add('hide');
     });
 
     //listen for submit of the search form
