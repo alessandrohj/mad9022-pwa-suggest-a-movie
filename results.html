@@ -23,11 +23,11 @@
     <script src="./js/app.js"></script>
   </head>
   <body>
-    <section class="page" id="moviesPage">
+    <section class="page">
       <div class="container">
-        <h4 class="center-align">Search Results</h4>
+        <h4 class="center-align">Showing search results for</h4>
         <h5 class="ref-keyword center-align"><!-- Search Keyword goes here --></h5>
-        <div class="movies">
+        <div class="movies row" id="moviesPage">
           <!-- cards for search result movies go here -->
         </div>
       </div>
@@ -36,13 +36,16 @@
     <!-- components over top -->
     <!-- nav bar -->
     <nav>
-      <div class="nav-wrapper red darken-2">
-        <a href="index.html" class="brand-logo left">PWA - Suggest A Movie</a>
+      <div class="nav-wrapper center-align red darken-2">
+        <a href="index.html" class="center-align logo">Suggest A Movie</a>
       </div>
     </nav>
 
     <!-- search bar -->
-    <div class="nav-wrapper z-depth-3 hide" id="searchBar">
+    <div id="modal1" class="modal">
+      <div class="modal-content">
+        <div class="container">
+  <div class="nav-wrapper z-depth-3 hoverable" id="searchBar">
       <form name="searchForm" id="searchForm">
         <div class="input-field">
           <input id="search" type="search" required />
@@ -53,7 +56,16 @@
         </div>
       </form>
     </div>
+        </div>
+      </div>
+    </div>
 
     <!-- FAB search button to show search bar -->
+    <div class="fixed-action-btn">
+      <a class="btn-floating modal-trigger btn-large red darken-4 z-depth-3 pulse" data-target="modal1">
+          <i class="large material-icons">search</i>
+      </a>
+  </div>
+
   </body>
 </html>

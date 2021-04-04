@@ -110,7 +110,19 @@ const APP = {
     let button = document.querySelector('#installButton');
     button.addEventListener('click', APP.installApp);
   }
-    //listen
+
+  //FAB listener to open search
+    let elems = document.querySelector('.modal');
+    M.Modal.init(elems, {});
+
+    // FAB Menu - Index.html
+    if(document.querySelector('.tap-target')){
+      let tapTarget = document.querySelector('.tap-target');
+      let instances = M.TapTarget.init(tapTarget, {});
+      instances.open();
+    }
+
+
     //listen for sign that app was installed
     window.addEventListener('appinstalled', (evt) => {
       console.log('app was installed');
@@ -213,7 +225,7 @@ const APP = {
     let movies = APP.results;
     let keywordSpan = document.querySelector('.ref-keyword');
     if (keyword && keywordSpan) {
-      keywordSpan.textContent = `Showing results for ${keyword}`;
+      keywordSpan.textContent = keyword;
     }
     APP.buildList(movies);
   },
@@ -247,7 +259,7 @@ const APP = {
     //display reference movie name in title
     //then call buildList
     let movies = APP.suggestedResults;
-    let titleSpan = document.querySelector('#suggested .ref-movie');
+    let titleSpan = document.querySelector('.ref-movie');
     console.log('ref title', ref);
     if (ref && titleSpan) {
       titleSpan.textContent = ref;
@@ -280,7 +292,7 @@ const APP = {
     let container = document.querySelector(`.movies`);
     //TODO: customize this HTML to make it your own
     if (container) {
-      let moviesPage = document.querySelector('#moviesPage');
+      let moviesPage = document.querySelector('.page');
       moviesPage.classList.add('active');
       if (movies.length > 0) {
         container.innerHTML = movies
@@ -289,12 +301,13 @@ const APP = {
             if (obj.poster_path != null) {
               img = APP.IMG_URL + 'w500' + obj.poster_path;
             }
-            return `<div class="card hoverable large" data-id="${obj.id}">
+            return `<div class="col s12 m6 l4">
+            <div class="card hoverable large" data-id="${obj.id}">
           <div class="card-image">
             <img src="${img}" alt="movie poster" class="notmaterialboxed"/>
             </div>
           <div class="card-content activator">
-            <h3 class="card-title"><span>${obj.title}</span><i class="material-icons right">more_vert</i></h3>
+            <h3 class="card-title"><span>${obj.title}</span><i class="material-icons right">more_vert</i></a></h3>
           </div>
           <div class="card-reveal">
             <span class="card-title grey-text text-darken-4">${obj.title}<i class="material-icons right">close</i></span>
@@ -303,6 +316,7 @@ const APP = {
           </div>
           <div class="card-action">
             <a href="#" class="find-suggested light-blue-text text-darken-3">Show Similar<i class="material-icons right">search</i></a>
+            </div>
           </div>
         </div>`;
           })

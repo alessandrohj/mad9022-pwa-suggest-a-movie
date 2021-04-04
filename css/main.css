@@ -9,7 +9,43 @@
   transform: translateY(-200%);
   transition: transform 0.5s linear;
   padding-top: 3rem;
+  background-color: #f8f0dd;
 }
+body{
+  background-color: #f8f0dd;
+}
+.logo{
+  font-size: 2.1rem;
+}
+
 .page.active {
   transform: translateY(0);
+}
+
+.card-image {
+  border-bottom: 1px solid black;
+}
+
+.modal .modal-content{
+  padding: 0;
+  background-color: white;
+}
+.modal{
+  background-color: #f8f0dd;
+}
+.nav-wrapper{
+  background-color: white;
+}
+
+#welcome{
+  padding-top: 2rem;
+  margin-bottom: 5vh;
+}
+
+#tmdb{
+  position: absolute;
+  bottom: 0;
+}
+h5 {
+  font-weight: bold;
 }

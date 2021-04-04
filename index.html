@@ -33,13 +33,16 @@
     <!-- components over top -->
     <!-- nav bar -->
     <nav>
-      <div class="nav-wrapper red darken-2">
-        <a href="index.html" class="brand-logo left">PWA - Suggest A Movie</a>
+      <div class="nav-wrapper center-align red darken-2">
+        <a href="index.html" class="center-align logo">Suggest A Movie</a>
       </div>
     </nav>
-
+    <div class="center-align" id="welcome">
+      <h4>Welcome to Suggest a Movie!</h4>
+    </div>
     <!-- search bar -->
-    <div class="nav-wrapper z-depth-3" id="searchBar">
+    <div class="container searchBar">
+    <div class="nav-wrapper z-depth-3 hoverable" id="searchBar">
       <form name="searchForm" id="searchForm">
         <div class="input-field">
           <input id="search" type="search" required />
@@ -50,15 +53,28 @@
         </div>
       </form>
     </div>
-    <div id="install">
-      <p>Do you like this site?</p>
-      <p>Install its app on your phone!</p>
-      <button id="installButton">Install</button>
-    </div>
-    <div class="fixed-action-btn">
-      <a class="btn-floating btn-large red darken-4 z-depth-3 pulse">
-          <i class="large material-icons">search</i>
-      </a>
   </div>
+    <!-- <div id="install">
+      <p>Do you like this site?</p>
+      <p>Install its app now on your phone!</p>
+      <button id="installButton">Install</button>
+    </div> -->
+    <div class="fixed-action-btn">
+      <a id="menu" class="waves-effect waves-light btn-floating btn-large red darken-4 z-depth-3 pulse" ><i class="material-icons">search</i></a>
+  </div>
+  <div class="tap-target" data-target="menu">
+    <div class="tap-target-content">
+      <h5>Keep an eye on this button</h5>
+      <p>You can use it on any results page to start a new search.</p>
+    </div>
+  </div>
+  <div class="container" id="tmdb">
+    <div class="row">
+      <div class="col s2 m3">
+      <img src="./img/tmdb.svg" alt="TMDB Logo">
+    </div>
+    </div>
+  </div>
+
   </body>
 </html>

@@ -26,7 +26,8 @@ let imageAssets = [
   './img/icon-192x192.png',
   './img/icon-384x384.png',
   './img/icon-512x512.png', 
-  './img/offline.png'
+  './img/offline.png',
+  './img/tmdb.svg'
 ];
 const offlinePage =   '404.html';
 let dynamicList = [];
